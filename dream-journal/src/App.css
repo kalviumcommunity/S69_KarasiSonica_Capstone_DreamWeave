@@ -1,0 +1,71 @@
+/* Home Page Styles */
+.home-container {
+  position: relative;
+  height: 100vh;
+  background: url("./assets/DALL·E\ 2025-03-03\ 13.23.27\ -\ A\ dark\ yet\ aesthetic\ surreal\ ocean\ dreamscape\ with\ faint\,\ glowing\ waves\ under\ a\ moody\,\ mist-filled\ sky.\ The\ water\ has\ soft\ bioluminescent\ highlights\ i.webp") no-repeat center center/cover;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Navigation Bar */
+.navbar {
+  position: absolute;
+  top: 20px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 50px;
+}
+
+.logo {
+  font-size: 28px;
+  font-family: "Georgia", serif;
+  color: white;
+}
+
+.logo span {
+  font-style: italic;
+}
+
+.nav-links a {
+  color: white;
+  margin-left: 20px;
+  text-decoration: none;
+  font-size: 18px;
+}
+
+/* Hero Section */
+.hero-content {
+  text-align: center;
+  color: white;
+  max-width: 700px;
+}
+
+.hero-text {
+  font-size: 20px;
+  font-style: italic;
+  line-height: 1.6;
+}
+
+/* Signup Button */
+.signup-btn {
+  background: rgba(255, 255, 255, 0.2);
+  color: black;
+  font-size: 18px;
+  padding: 10px 25px;
+  border-radius: 20px;
+  border: 2px solid black;
+  cursor: pointer;
+  margin-top: 20px;
+  transition: 0.3s ease-in-out;
+}
+
+.signup-btn:hover {
+  background: white;
+  color: black;
+  transform: scale(1.1);
+}
