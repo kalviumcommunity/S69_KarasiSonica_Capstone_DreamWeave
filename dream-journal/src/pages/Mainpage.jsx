@@ -1,10 +1,10 @@
 import React from 'react';
+import Testimonials from '../components/Testimonials'; 
+import Footer from '../components/layouts/Footer';
 
 const MainPage = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-violet-500 to-indigo-500 flex items-center justify-center text-white text-3xl">
-      Welcome to Your Dream Journal!
-    </div>
+      <Footer />
   );
 };
 

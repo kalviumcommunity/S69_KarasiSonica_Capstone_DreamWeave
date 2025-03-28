@@ -1,22 +1,20 @@
 import React, { useState } from "react";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa";
-import { useNavigate } from "react-router-dom"; // Import useNavigate
+import { useNavigate } from "react-router-dom";
 
-const AuthModal = ({ isOpen, onClose }) => {
-  const navigate = useNavigate(); // Initialize navigate
+const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
+  const navigate = useNavigate();
   const [isLogin, setIsLogin] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
-
   const [username, setUsername] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-
   const [errors, setErrors] = useState({});
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
     setIsSubmitted(true);
 
@@ -28,8 +26,10 @@ const AuthModal = ({ isOpen, onClose }) => {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
-      console.log(isLogin ? "Signing in..." : "Creating account...");
-      navigate('/main'); // Redirect to the main page after successful submission
+      alert("Login successful! 🎉");
+      onLoginSuccess(); // Update auth state in parent
+      navigate("/dreams"); // Redirect to dreams page
+      onClose(); // Close modal
     }
   };
 
@@ -49,8 +49,7 @@ const AuthModal = ({ isOpen, onClose }) => {
           </h2>
         </div>
 
-        {/* Form Fields */}
-        <form className="space-y-4" onSubmit={handleSubmit}>
+        <form className="space-y-4" onSubmit={handleLogin}>
           <div>
             <label className="block text-sm font-medium">Username</label>
             <input
@@ -59,9 +58,7 @@ const AuthModal = ({ isOpen, onClose }) => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               className={`w-full border ${
-                isSubmitted && errors.username
-                  ? "border-red-500"
-                  : "border-gray-300"
+                isSubmitted && errors.username ? "border-red-500" : "border-gray-300"
               } rounded-md px-4 py-2 focus:ring-2 focus:ring-violet-600 focus:outline-none`}
             />
             {isSubmitted && errors.username && (
@@ -77,9 +74,7 @@ const AuthModal = ({ isOpen, onClose }) => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className={`w-full border ${
-                isSubmitted && errors.email
-                  ? "border-red-500"
-                  : "border-gray-300"
+                isSubmitted && errors.email ? "border-red-500" : "border-gray-300"
               } rounded-md px-4 py-2 focus:ring-2 focus:ring-violet-600 focus:outline-none`}
             />
             {isSubmitted && errors.email && (
@@ -96,9 +91,7 @@ const AuthModal = ({ isOpen, onClose }) => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className={`w-full border ${
-                  isSubmitted && errors.password
-                    ? "border-red-500"
-                    : "border-gray-300"
+                  isSubmitted && errors.password ? "border-red-500" : "border-gray-300"
                 } rounded-md px-4 py-2 pr-10 focus:ring-2 focus:ring-violet-600 focus:outline-none`}
               />
               <button
@@ -114,7 +107,6 @@ const AuthModal = ({ isOpen, onClose }) => {
             )}
           </div>
 
-          {/* Submit Button */}
           <button
             type="submit"
             className="w-full bg-violet-600 text-white py-2 mt-6 rounded-md shadow-md hover:bg-violet-700 transition-all"
@@ -123,7 +115,6 @@ const AuthModal = ({ isOpen, onClose }) => {
           </button>
         </form>
 
-        {/* Toggle Link */}
         <p className="text-center text-sm text-gray-600 mt-4">
           {isLogin ? (
             <span>
