@@ -19,6 +19,11 @@ router.post("/signup", async (req, res) => {
     }
 });
 
+router.get("/users", async (req, res) => {
+    const users = await User.find();
+    res.json(users);
+});
+
 router.post("/login", async (req, res) => {
     const {username, password} = req.body;
     const user = await User.findOne({ username });
@@ -29,11 +34,6 @@ router.post("/login", async (req, res) => {
 
     const token = jwt.sign({ userId: user._id }, "secret_key", { expiresIn: "1h" });
     res.json({ token, message: "Login Successful" });
-});
-
-router.get("/users", async (req, res) => {
-    const users = await User.find();
-    res.json(users);
 });
 
 module.exports = router;
