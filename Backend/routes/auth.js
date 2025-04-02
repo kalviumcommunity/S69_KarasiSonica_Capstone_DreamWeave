@@ -36,4 +36,30 @@ router.post("/login", async (req, res) => {
     res.json({ token, message: "Login Successful" });
 });
 
+router.put("/update/:id", async (req, res) => {
+    const { id } = req.params;
+    const { username, password } = req.body;
+
+    try {
+        const user = await User.findById(id);
+        if (!user) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        if (username) {
+            user.username = username;
+        }
+
+        if (password) {
+            user.password = await bcrypt.hash(password, 10);
+        }
+
+        await user.save();
+        res.json({ message: "User updated successfully!" });
+    } catch (error) {
+        res.status(500).json({ error: "Error updating user" });
+    }
+});
+
+
 module.exports = router;
