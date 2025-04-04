@@ -8,6 +8,8 @@ const DreamAnalytics = ({ dreams }) => {
   const [timeRange, setTimeRange] = useState("monthly");
   const [chartType, setChartType] = useState("line");
 
+
+
   // Process dream data for charts
   const processData = () => {
     const moodCounts = {
@@ -196,5 +198,7 @@ const DreamAnalytics = ({ dreams }) => {
     </div>
   );
 };
+
+
 
 export default DreamAnalytics;

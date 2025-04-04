@@ -1,5 +1,8 @@
 import React from "react";
 
+
+
+//testimonials cards
 const testimonials = [
   { 
     name: "Emily Richardson", 
@@ -50,5 +53,8 @@ const Testimonials = () => (
     </div>
   </div>
 );
+
+
+
 
 export default Testimonials;
