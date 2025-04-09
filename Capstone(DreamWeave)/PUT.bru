@@ -5,7 +5,15 @@ meta {
 }
 
 put {
-  url: http://localhost:5000/auth/update/
-  body: none
+  url: http://localhost:5000/auth/update/67e37f748591f8dd7545bcd1
+  body: json
   auth: inherit
+}
+
+body:json {
+  {
+      "username": "newUsername",
+      "password": "user123"
+  }
+  
 }
