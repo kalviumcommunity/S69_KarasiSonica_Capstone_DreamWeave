@@ -75,3 +75,5 @@ DreamWeave is a platform where users can beautifully design a dream journaling w
 ---
 
 This structured plan will help ensure steady progress towards completing **DREAMWEAVE** successfully. 🚀 
+
+Deployed Backend link: https://s69-karasisonica-capstone-dreamweave-8.onrender.com
