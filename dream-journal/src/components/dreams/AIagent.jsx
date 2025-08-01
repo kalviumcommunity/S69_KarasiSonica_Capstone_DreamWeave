@@ -13,7 +13,7 @@ const AIagent = () => {
     setAIResponse("");
 
     try {
-      const response = await fetch("http://localhost:5000/ai/ask", {
+      const response = await fetch("http://localhost:5000/api/ai/ask", {
         method: "POST",
         headers: {
           "Content-Type": "application/json"

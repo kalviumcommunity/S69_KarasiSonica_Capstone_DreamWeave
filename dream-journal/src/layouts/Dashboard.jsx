@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import Footer from '../components/layouts/Footer'; // Adjust if needed
+import Footer from '../components/layouts/Footer';
+import Chatbot from '../components/dreams/ChatBot'; 
 
 const Dashboard = () => {
   return (
@@ -95,6 +96,9 @@ const Dashboard = () => {
       <footer className="w-full border-t border-gray-300 pt-6 mt-auto">
         <Footer />
       </footer>
+
+      <Chatbot />
+
     </div>
   );
 };
