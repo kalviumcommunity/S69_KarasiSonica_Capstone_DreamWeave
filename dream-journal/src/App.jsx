@@ -12,6 +12,7 @@ import DreamList from "./components/dreams/DreamList";
 import DreamAnalytics from "./components/dreams/DreamAnalytics";
 import { DreamProvider } from "./components/dreams/DreamContext";
 import Profile from "./pages/Profile"; // ✅ fixed path
+import AboutUs from "./pages/AboutUs"; // Import AboutUs page
 
 const App = () => {
   const [showAuthModal, setShowAuthModal] = useState(false);
