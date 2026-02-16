@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Edit2, LogOut, Mail, User, Calendar, Award } from "lucide-react";
+import { ArrowLeft, Edit2, LogOut, Mail, User, Calendar, Award, Check, X } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDreams } from "../components/dreams/DreamContext";
+import { authService } from "../services/authService";
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -10,48 +11,89 @@ const Profile = () => {
   const [profile, setProfile] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editData, setEditData] = useState({});
+  const [errors, setErrors] = useState({});
+  const [successMessage, setSuccessMessage] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
-    // Try to fetch from backend first, fallback to localStorage
+    // Fetch user profile from localStorage
     const storedProfile = localStorage.getItem('userProfile');
     if (storedProfile) {
-      const userData = JSON.parse(storedProfile);
-      setProfile({
-        ...userData,
-        totalDreams: dreams.length,
-        totalLikes: dreams.reduce((sum, d) => sum + (d.likes || 0), 0)
-      });
-      setEditData(userData);
+      try {
+        const userData = JSON.parse(storedProfile);
+        const profileData = {
+          ...userData,
+          totalDreams: dreams.length,
+          totalLikes: dreams.reduce((sum, d) => sum + (d.likes || 0), 0)
+        };
+        setProfile(profileData);
+        setEditData(userData);
+      } catch (error) {
+        console.error('Error parsing profile:', error);
+        setProfile(null);
+      }
     } else {
-      // If no stored profile, show a default message
       setProfile(null);
     }
   }, [dreams]);
 
   const handleLogout = () => {
-    if (window.confirm("Are you sure you want to logout?")) {
-      localStorage.removeItem('userProfile');
-      localStorage.removeItem('isAuthenticated');
-      localStorage.removeItem('dreams');
-      navigate("/dreams");
-      window.location.reload();
+    if (window.confirm("Are you sure you want to logout? You'll be redirected to the home page.")) {
+      const result = authService.logout();
+      if (result.success) {
+        navigate("/dreams");
+        window.location.reload();
+      }
     }
   };
 
   const handleEditChange = (e) => {
     const { name, value } = e.target;
     setEditData(prev => ({ ...prev, [name]: value }));
+    // Clear error for this field when user starts typing
+    if (errors[name]) {
+      setErrors(prev => ({ ...prev, [name]: "" }));
+    }
   };
 
-  const handleSaveProfile = () => {
-    const updatedProfile = {
-      ...profile,
-      ...editData
-    };
-    setProfile(updatedProfile);
-    localStorage.setItem('userProfile', JSON.stringify(updatedProfile));
-    setIsEditing(false);
-    alert("Profile updated successfully!");
+  const validateProfile = () => {
+    const newErrors = {};
+    if (!editData.name?.trim()) newErrors.name = "Name is required";
+    if (!editData.email?.trim()) newErrors.email = "Email is required";
+    if (!editData.username?.trim()) newErrors.username = "Username is required";
+    if (editData.bio && editData.bio.length > 150) newErrors.bio = "Bio must be less than 150 characters";
+    return newErrors;
+  };
+
+  const handleSaveProfile = async () => {
+    const validationErrors = validateProfile();
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    setIsLoading(true);
+    setSuccessMessage("");
+
+    try {
+      const result = await authService.updateProfile(profile.id, editData);
+      
+      if (result.success) {
+        setProfile(prev => ({
+          ...prev,
+          ...editData
+        }));
+        setIsEditing(false);
+        setSuccessMessage("✅ Profile updated successfully!");
+        setTimeout(() => setSuccessMessage(""), 3000);
+      } else {
+        setErrors({ submit: result.error });
+      }
+    } catch (error) {
+      setErrors({ submit: "Failed to update profile. Please try again." });
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   if (!profile) {
@@ -131,6 +173,19 @@ const Profile = () => {
           </button>
         </motion.div>
 
+        {/* Success Message */}
+        {successMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0 }}
+            className="mb-6 p-4 bg-green-50 border border-green-200 rounded-lg text-green-700 font-medium flex items-center gap-2"
+          >
+            <Check size={20} />
+            {successMessage}
+          </motion.div>
+        )}
+
         {/* Profile Card */}
         <motion.div
           variants={containerVariants}
@@ -150,14 +205,21 @@ const Profile = () => {
             <div className="px-8 pb-8">
               {/* Avatar Section */}
               <div className="flex items-end gap-6 -mt-20 mb-6">
-                <img
-                  src={profile.avatar}
-                  alt={profile.name}
+                <motion.img
+                  src={editData.avatar || profile.avatar}
+                  alt={editData.name || profile.name}
                   className="w-32 h-32 rounded-2xl border-4 border-white shadow-lg"
+                  whileHover={{ scale: 1.05 }}
                 />
                 <div className="flex-1">
-                  <h2 className="text-3xl font-bold text-gray-900">{profile.name}</h2>
-                  <p className="text-gray-600">@{profile.username}</p>
+                  <h2 className="text-3xl font-bold text-gray-900">{editData.name || profile.name}</h2>
+                  <p className="text-gray-600">@{editData.username || profile.username}</p>
+                  {profile.isVerified && (
+                    <div className="flex items-center gap-1 mt-2 text-green-600 text-sm font-semibold">
+                      <Check size={16} />
+                      Verified User
+                    </div>
+                  )}
                 </div>
                 <div className="flex gap-2">
                   <motion.button
@@ -166,11 +228,13 @@ const Profile = () => {
                     onClick={() => {
                       if (isEditing) {
                         setIsEditing(false);
+                        setEditData({...profile});
+                        setErrors({});
                       } else {
                         setIsEditing(true);
                       }
                     }}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-blue-500 text-white hover:bg-blue-600 transition-colors font-medium"
                   >
                     <Edit2 size={18} />
                     {isEditing ? "Cancel" : "Edit"}
@@ -179,13 +243,29 @@ const Profile = () => {
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={handleLogout}
-                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors"
+                    className="flex items-center gap-2 px-4 py-2 rounded-lg bg-red-500 text-white hover:bg-red-600 transition-colors font-medium"
                   >
                     <LogOut size={18} />
                     Logout
                   </motion.button>
                 </div>
               </div>
+
+              {/* Error Messages */}
+              {Object.keys(errors).length > 0 && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg"
+                >
+                  {Object.entries(errors).map(([key, value]) => (
+                    <p key={key} className="text-red-700 text-sm flex items-center gap-2">
+                      <X size={16} />
+                      {value}
+                    </p>
+                  ))}
+                </motion.div>
+              )}
 
               {/* Profile Info */}
               {!isEditing ? (
@@ -223,70 +303,109 @@ const Profile = () => {
                       <Award size={18} className="text-green-600" />
                       <span className="font-medium">Bio</span>
                     </div>
-                    <p className="text-gray-900 font-semibold ml-6">{profile.bio}</p>
+                    <p className="text-gray-900 font-semibold ml-6">
+                      {profile.bio || "No bio set yet"}
+                    </p>
                   </div>
                 </div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-6 border-t border-gray-200">
                   {/* Editable Name */}
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Name</label>
+                    <label className="block text-sm font-semibold text-gray-700">Full Name *</label>
                     <input
                       type="text"
                       name="name"
-                      value={editData.name}
+                      value={editData.name || ""}
                       onChange={handleEditChange}
-                      className="w-full px-4 py-2 rounded-lg border-2 border-purple-200 focus:outline-none focus:border-purple-500"
+                      placeholder="Enter your full name"
+                      className={`w-full px-4 py-2 rounded-lg border-2 focus:outline-none transition-all ${
+                        errors.name ? "border-red-400 bg-red-50" : "border-purple-200 focus:border-purple-500"
+                      }`}
                     />
+                    {errors.name && <p className="text-red-600 text-xs mt-1">{errors.name}</p>}
                   </div>
 
                   {/* Editable Username */}
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Username</label>
+                    <label className="block text-sm font-semibold text-gray-700">Username *</label>
                     <input
                       type="text"
                       name="username"
-                      value={editData.username}
+                      value={editData.username || ""}
                       onChange={handleEditChange}
-                      className="w-full px-4 py-2 rounded-lg border-2 border-indigo-200 focus:outline-none focus:border-indigo-500"
+                      placeholder="Enter your username"
+                      className={`w-full px-4 py-2 rounded-lg border-2 focus:outline-none transition-all ${
+                        errors.username ? "border-red-400 bg-red-50" : "border-indigo-200 focus:border-indigo-500"
+                      }`}
                     />
+                    {errors.username && <p className="text-red-600 text-xs mt-1">{errors.username}</p>}
                   </div>
 
                   {/* Editable Email */}
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Email</label>
+                    <label className="block text-sm font-semibold text-gray-700">Email *</label>
                     <input
                       type="email"
                       name="email"
-                      value={editData.email}
+                      value={editData.email || ""}
                       onChange={handleEditChange}
-                      className="w-full px-4 py-2 rounded-lg border-2 border-purple-200 focus:outline-none focus:border-purple-500"
+                      placeholder="Enter your email"
+                      className={`w-full px-4 py-2 rounded-lg border-2 focus:outline-none transition-all ${
+                        errors.email ? "border-red-400 bg-red-50" : "border-purple-200 focus:border-purple-500"
+                      }`}
                     />
+                    {errors.email && <p className="text-red-600 text-xs mt-1">{errors.email}</p>}
                   </div>
 
                   {/* Editable Bio */}
                   <div className="space-y-2">
-                    <label className="block text-sm font-medium text-gray-700">Bio</label>
-                    <input
-                      type="text"
+                    <label className="block text-sm font-semibold text-gray-700">
+                      Bio <span className="text-xs text-gray-500">(max 150 chars)</span>
+                    </label>
+                    <textarea
                       name="bio"
-                      value={editData.bio}
+                      value={editData.bio || ""}
                       onChange={handleEditChange}
-                      className="w-full px-4 py-2 rounded-lg border-2 border-indigo-200 focus:outline-none focus:border-indigo-500"
+                      placeholder="Tell us about yourself..."
+                      maxLength={150}
+                      rows={3}
+                      className={`w-full px-4 py-2 rounded-lg border-2 focus:outline-none transition-all resize-none ${
+                        errors.bio ? "border-red-400 bg-red-50" : "border-indigo-200 focus:border-indigo-500"
+                      }`}
                     />
+                    <div className="flex justify-between">
+                      {errors.bio && <p className="text-red-600 text-xs">{errors.bio}</p>}
+                      <p className="text-xs text-gray-500 ml-auto">
+                        {(editData.bio || "").length}/150
+                      </p>
+                    </div>
                   </div>
                 </div>
               )}
 
               {isEditing && (
-                <div className="mt-6 flex justify-end">
+                <div className="mt-6 flex justify-end gap-3">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={() => {
+                      setIsEditing(false);
+                      setEditData({...profile});
+                      setErrors({});
+                    }}
+                    className="px-6 py-2 border-2 border-gray-300 text-gray-700 font-bold rounded-lg hover:bg-gray-50 transition-all"
+                  >
+                    Discard
+                  </motion.button>
                   <motion.button
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={handleSaveProfile}
-                    className="px-8 py-3 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-lg hover:shadow-lg transition-all"
+                    disabled={isLoading}
+                    className="px-8 py-2 bg-gradient-to-r from-purple-600 to-indigo-600 text-white font-bold rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                   >
-                    Save Changes
+                    {isLoading ? "Saving..." : "Save Changes"}
                   </motion.button>
                 </div>
               )}
@@ -299,33 +418,40 @@ const Profile = () => {
             className="grid grid-cols-1 md:grid-cols-3 gap-6"
           >
             {/* Total Dreams */}
-            <div className="bg-white rounded-2xl shadow-md p-6 border border-purple-100">
+            <div className="bg-white rounded-2xl shadow-md p-6 border border-purple-100 hover:shadow-lg transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-600 text-sm font-medium">Total Dreams</p>
                   <p className="text-3xl font-bold text-purple-600 mt-2">{profile.totalDreams}</p>
+                  <p className="text-xs text-gray-500 mt-1">dreams recorded</p>
                 </div>
                 <div className="text-4xl">📚</div>
               </div>
             </div>
 
             {/* Total Likes */}
-            <div className="bg-white rounded-2xl shadow-md p-6 border border-red-100">
+            <div className="bg-white rounded-2xl shadow-md p-6 border border-red-100 hover:shadow-lg transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-600 text-sm font-medium">Total Likes</p>
                   <p className="text-3xl font-bold text-red-600 mt-2">{profile.totalLikes}</p>
+                  <p className="text-xs text-gray-500 mt-1">hearts earned</p>
                 </div>
                 <div className="text-4xl">❤️</div>
               </div>
             </div>
 
             {/* Account Status */}
-            <div className="bg-white rounded-2xl shadow-md p-6 border border-green-100">
+            <div className="bg-white rounded-2xl shadow-md p-6 border border-green-100 hover:shadow-lg transition-shadow">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-gray-600 text-sm font-medium">Account Status</p>
-                  <p className="text-3xl font-bold text-green-600 mt-2">Active</p>
+                  <p className="text-3xl font-bold text-green-600 mt-2">
+                    {profile.isVerified ? "Verified" : "Active"}
+                  </p>
+                  <p className="text-xs text-gray-500 mt-1">
+                    {profile.isVerified ? "verified user" : "account active"}
+                  </p>
                 </div>
                 <div className="text-4xl">✅</div>
               </div>
@@ -340,20 +466,20 @@ const Profile = () => {
             <h3 className="text-lg font-bold text-blue-900 mb-4">ℹ️ Account Information</h3>
             <ul className="space-y-3 text-blue-800 text-sm">
               <li className="flex items-start gap-3">
-                <span className="text-lg">✓</span>
-                <span>Your dreams are securely stored on your device using local storage</span>
+                <Check size={18} className="text-blue-600 flex-shrink-0 mt-0.5" />
+                <span>All your dreams are securely stored and synchronized across your devices</span>
               </li>
               <li className="flex items-start gap-3">
-                <span className="text-lg">✓</span>
-                <span>All data is private and only accessible when you're logged in</span>
+                <Check size={18} className="text-blue-600 flex-shrink-0 mt-0.5" />
+                <span>Your profile data is only accessible when you're authenticated</span>
               </li>
               <li className="flex items-start gap-3">
-                <span className="text-lg">✓</span>
-                <span>You can edit your profile information at any time</span>
+                <Check size={18} className="text-blue-600 flex-shrink-0 mt-0.5" />
+                <span>You can update your profile information at any time from this page</span>
               </li>
               <li className="flex items-start gap-3">
-                <span className="text-lg">✓</span>
-                <span>Logging out will clear your session but keep your dreams saved</span>
+                <Check size={18} className="text-blue-600 flex-shrink-0 mt-0.5" />
+                <span>Logging out will clear your session while keeping all your data safe</span>
               </li>
             </ul>
           </motion.div>
