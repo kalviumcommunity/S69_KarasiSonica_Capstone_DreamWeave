@@ -26,9 +26,23 @@ const AuthModal = ({ isOpen, onClose, onLoginSuccess }) => {
     setErrors(newErrors);
 
     if (Object.keys(newErrors).length === 0) {
+      // Store user credentials in localStorage
+      const userData = {
+        username,
+        email,
+        name: username.charAt(0).toUpperCase() + username.slice(1),
+        bio: "Dream enthusiast and night explorer",
+        joined: new Date().toISOString(),
+        avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(username)}&background=random`,
+        totalDreams: 0,
+        joinedDate: new Date().toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" })
+      };
+      
+      localStorage.setItem('userProfile', JSON.stringify(userData));
+      
       alert("Login successful! 🎉");
       onLoginSuccess(); // Update auth state in parent
-      navigate("/dreams"); // Redirect to dreams page
+      navigate("/dashboard"); // Redirect to dashboard
       onClose(); // Close modal
     }
   };

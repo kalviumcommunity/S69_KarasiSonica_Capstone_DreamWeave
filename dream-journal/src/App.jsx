@@ -8,7 +8,7 @@ import AIagent from "./components/dreams/AIagent";
 import AuthModal from "./components/auth/AuthModal";
 import Footer from "./components/layouts/Footer";
 import DreamForm from "./components/dreams/DreamForm";
-import DreamList from "./components/dreams/DreamList";
+import Dreams from "./components/dreams/Dreams";
 import DreamAnalytics from "./components/dreams/DreamAnalytics";
 import { DreamProvider } from "./components/dreams/DreamContext";
 import Profile from "./pages/Profile"; // ✅ fixed path
@@ -93,7 +93,7 @@ const App = () => {
             isAuthenticated ? (
               <>
                 <Navbar {...{ setShowAuthModal, isAuthenticated, onLogout: handleLogout }} />
-                <DreamList />
+                <Dreams />
               </>
             ) : (
               <Navigate to="/dreams" replace />
